@@ -1,0 +1,75 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "g++",
+            "options": {
+                "cwd": "${workspaceFolder}\\iptool"
+            },
+            "args": [
+                "-o",
+                "..\\bin\\iptool.exe",
+                "-I.",
+                "-g",
+                "main.cpp",
+                "image.cpp",
+                "utility.cpp"
+            ],
+            "group": "build"
+        },
+        {
+            "label": "compileLib",
+            "type": "shell",
+            "command": "g++",
+            "options": {
+                "cwd": "${workspaceFolder}\\iptool"
+            },
+            "args": [
+                "-c", "-I.",
+                "-o",
+                "..\\web\\bin\\Debug\\netcoreapp2.0\\dip.dll.o",
+                "lib.cpp"
+            ],
+            "group": "build",
+            "dependsOn": [
+                "buildWeb"
+            ]
+        },
+        {
+            "label": "buildLib",
+            "type": "shell",
+            "command": "g++",
+            "options": {
+                "cwd": "${workspaceFolder}\\iptool"
+            },
+            "args": [
+                "-shared",
+                "-o",
+                "..\\web\\bin\\Debug\\netcoreapp2.0\\dip.dll",
+                "..\\web\\bin\\Debug\\netcoreapp2.0\\dip.dll.o"
+            ],
+            "group": "build",
+            "dependsOn": [
+                "compileLib"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "buildWeb",
+            "type": "shell",
+            "command": "dotnet",
+            "options": {
+                "cwd": "${workspaceFolder}/web"
+            },
+            "args": [
+                "build"
+            ],
+            "group": "build",
+            "problemMatcher": "$msCompile"
+        }
+    ]
+}

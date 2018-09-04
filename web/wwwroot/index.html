@@ -1,0 +1,457 @@
+<html>
+    <head>
+        <title>Digital image processing</title>
+        <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.0/themes/smoothness/jquery-ui.css"/>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"/>
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css" integrity="sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU" crossorigin="anonymous">
+        <!-- <link rel="stylesheet" href="../css/bootstrap-colorpicker.min.css"/> -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-colorpicker/2.5.3/css/bootstrap-colorpicker.min.css" />
+        <style>
+            #sourceImage {
+                display: none;
+                -webkit-user-select: none;
+                -khtml-user-select: none;
+                -moz-user-select: none;
+                -o-user-select: none;
+                user-select: none;                        
+            }
+            #sourceImageNotSelected {
+                display:table-cell;
+                width: 600px;
+                height: 400px;
+                text-align: center;
+                vertical-align: middle;
+                background-color: #DDD;
+                font-size: 120px;
+                cursor: pointer;
+            }
+            #sourceImageNotSelected > * {
+                vertical-align: middle;
+            }
+
+            .ui-slider-handle.add-slider-handle, .ui-slider-handle.binarize-slider-handle-low, .ui-slider-handle.binarize-slider-handle-high {
+                width: 2.5em;
+                height: 1.6em;
+                font-size: 60%;
+                top: 50%;
+                margin-top: -.8em;
+                text-align: center;
+            }            
+            .op-opts {
+                margin-top: .5ex;
+                display: none;
+            }      
+            .add-slider {
+                width: 100%;
+                
+            }  
+            .roiHolder > * {
+                vertical-align: top;
+            }
+            h1 {
+                margin-bottom: .7ex;
+            }
+            small {
+                font-size: 70%;
+                font-weight: normal;
+            }
+            #menu {
+                display: none; 
+                vertical-align: top
+            }
+            .roi-region {
+                border: 2px solid red;
+                position: absolute;
+                display: inline-block;
+            }
+            #iH {
+                position:relative;
+                display: inline-block;
+                border: 1px solid black;
+            }
+            #imgHolder {
+                margin: 1ex .5em;
+            }
+            #imgFile {
+                display: none;
+            }
+            .roi-class {
+                white-space: nowrap;
+                padding: .2ex .2em;
+                margin: 0 .5em;
+                margin-top: 1ex;
+            }
+            #addROIHolder {
+                padding: 1.5ex .2em;
+                margin: 0 .5em;
+            }
+            .operationHolder {
+                margin-top: .5ex;
+            }
+            a.btn > i {
+                line-height: inherit;
+            }
+            #roi-class-template, #roi-region-template {
+                display: none;
+            }
+            .roi-reset {
+                cursor: pointer;
+            }
+        </style>        
+    </head>
+    <body>
+        <nav class="navbar navbar-light bg-light">
+            <a class="navbar-brand" href="#"><i class="fas fa-images"></i>&nbsp;&nbsp;Digital Image Processing</a>
+            <form class="form-inline" id="imgForm" style="margin-bottom: 0">                
+                <input type="file" id="imgFile" name="sourceImage" />
+            </form>            
+        </nav>        
+        <div id="imgHolder">
+            <div id="sourceImageNotSelected" title="Select your image...">
+                <i class="far fa-image"></i><br/>
+                <span style="font-size: 20px">Select an image...</span>
+            </div>
+            <div id="iH">
+                <img id="sourceImage" src="#" alt="image for processing" draggable="false" />
+                <div id="roi-region-template" class="roi-region"></div>
+            </div>
+            <div id="menu">
+                <div class="roiHolder">   
+                    <div id="rois">
+                        <div id="roi-class-template" class="roi-class">
+                            <div class="input-group input-group-sm">
+                                <div class="input-group-prepend">
+                                    <a class="btn btn-outline-primary btn-sm roi-select" href="#" role="button" data-toggle="button"><i class="fas fa-mouse-pointer"></i></a>
+                                </div>
+                                <input type="text" class="form-control roi-region-text" aria-label="ROI region" style="border-right: none" />
+                                <div class="input-group-append">
+                                    <i class="far fa-times-circle input-group-text roi-reset" style="color: rgb(230, 48, 48); background-color: inherit; padding: .1rem .2rem; line-height: 2;border-left:none;border-right: none"></i>
+                                    <i class="fas fa-square-full input-group-text roiColor" style="color:red; background-color: inherit; padding: .1rem .2rem; padding-right: .4rem; line-height: 2;border-left:none;border-right: none"></i>
+                                    <a class="btn btn-outline-success btn-sm roi-state" href="#" role="button" data-toggle="button" style="padding-left:.3rem; padding-right:.3rem"><i class="fas fa-check"></i></a>                                 
+                                </div>
+                            </div>                     
+                            <div class="operationHolder">
+                                <select name="operation" class="operation form-control form-control-sm">
+                                    <option value="gray">C-img: Graying</option>
+                                    <option value="add">G-img: Brightening</option>  
+                                    <option value="binarize">G-img: Binarize</option>                      
+                                    <option value="gaus">Gaussian filter</option> 
+                                    <!-- <option value="bin">Binarization</option>
+                                    <option value="sc">Scaling</option> -->
+                                </select> 
+                            </div>   
+                            <div class="op-opts add-opts">
+                                <div class="add-slider">
+                                    <div class="ui-slider-handle add-slider-handle"></div>
+                                </div>
+                            </div>
+                            <div class="op-opts gray-opts">
+                                <select class="grayWay form-control form-control-sm">
+                                    <option value="0">red</option>
+                                    <option value="1">green</option>
+                                    <option value="2">blue</option>
+                                    <option value="3">L1</option>
+                                    <option value="4">L2</option>
+                                </select>
+                            </div>    
+                            <div class="op-opts binarize-opts">
+                                <div class="binarize-slider">
+                                    <div class="ui-slider-handle binarize-slider-handle-low"></div>
+                                    <div class="ui-slider-handle binarize-slider-handle-high"></div>
+                                </div>
+                            </div>    
+                            <div class="op-opts gaus-opts">
+                                <div class="gaus-slider-gs">
+                                    <div class="ui-slider-handle gaus-slider-handle-gs"></div>
+                                </div>
+                                <div class="gaus-slider-br">
+                                    <div class="ui-slider-handle gaus-slider-handle-br"></div>
+                                </div>                                
+                            </div>                                                                                  
+                        </div>
+                    </div>  
+                    <div id="addROIHolder">
+                        <a class="btn btn-outline-primary btn-sm" href="#" role="button" id="addROI">+ ROI</a>&nbsp;              
+                        <a class="btn btn-outline-primary btn-sm" href="#" role="button" href="#" id="download" download="result.jpg">Download</a>
+                    </div>
+                </div>
+            </div>
+        </div>            
+        <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+        <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.min.js" integrity="sha256-eGE6blurk5sHj+rmkfsGYeKyZx3M4bG+ZlFyA7Kns7E=" crossorigin="anonymous"></script>        
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"></script>        
+        <!-- <script src="../js/bootstrap-colorpicker.min.js"></script> -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-colorpicker/2.5.3/js/bootstrap-colorpicker.min.js"></script>
+        <script>
+            var imgFile = $("#imgFile");
+            var sourceImage = $('#sourceImage');
+            var imgHolder = $("#imgHolder");
+            var roiTemplate = $("#roi-class-template");
+            var roiRegionTemplate = $("#roi-region-template");
+            var iH = $("#iH");
+            var roisHtml = $("#rois");
+            var download = $("#download");
+            var imageWidth = 0;
+            var imageHeight = 0;
+            var regionSelectionStarted = false;
+            var rois = []
+            var activeRoi = -1;
+            
+            //var roi = null;
+            //roiData = null;
+
+            var sourceImageNotSelected = 
+                $("#sourceImageNotSelected").click(function () {
+                    imgFile.click();
+                });
+
+            function updateImage()
+            {
+                var ops = [];
+                //var j = 0;
+                for (var i = 0; i < rois.length; i++)
+                {
+                    var roi = rois[i];
+                    if (roi.control.find(".roi-state").is(".active"))
+                    {
+                        var o = {};
+                        var p = roi.rect.position();
+                        o.x0 = p.left;
+                        o.y0 = p.top;
+                        o.w = roi.rect.outerWidth();
+                        o.h = roi.rect.outerHeight();
+                        o.op = roi.control.find(".operation").val();
+                        if (o.op == "add")
+                        {
+                            var value = roi.control.find(".add-slider").slider("value");
+                            o.p = { addV: value };
+                        }
+                        if (o.op == "gray")
+                        {
+                            var value = roi.control.find(".grayWay").val();
+                            o.p = { grayWay: value };
+                        }
+                        if (o.op == "binarize")
+                        {
+                            var values = roi.control.find(".binarize-slider").slider("values");
+                            o.p = { t1: values[0], t2: values[1] };
+                        }
+                        ops.push(o);
+                    }
+                }
+                $.ajax(
+                    {
+                        url: "/api/image", 
+                        type: "PUT",
+                        data: JSON.stringify(ops),
+                        contentType: 'application/json',
+                        success: function(data) {
+                            var dataUrl = "data:" + data.mime + ";base64," + data.img;
+                            sourceImage.attr("src", dataUrl).attr("alt", "processing result");                    
+                            download.attr("href", dataUrl);
+                        }
+                    }
+                );                  
+            }                 
+
+            var colorPresets = [ "red", "blue", "green", "black" ]
+            function initROI() 
+            {
+                var roiId = rois.length;
+                var color = (colorPresets.length <= roiId) ? "red" : colorPresets[roiId];
+                var roiControl = roiTemplate.clone();
+                var roiRegion = roiRegionTemplate.clone();
+                roiControl.removeAttr("id")
+                    .attr("data-id", roiId)
+                    .appendTo(roisHtml);
+                roiRegion.removeAttr("id")
+                    .attr("data-id", roiId)
+                    .css({left: 0, top: 0, width: imageWidth, height: imageHeight, "border-color": color })
+                    .appendTo(iH);
+                roiControl.find(".roi-region-text").val("(0,0) -> (" + imageWidth + "," + imageHeight + ")")
+                    .change(function () {
+                        var newText = $(this).val();
+                        var re = /\((\d*),\s*?(\d*)\)\s*->\s*\((\d*),\s*?(\d*)\)/
+                        var m = newText.match(re);
+                        if (m == null) return false;
+                        var x0 = parseInt(m[1]);
+                        var y0 = parseInt(m[2]);
+                        var x1 = parseInt(m[3]);
+                        var y1 = parseInt(m[4]);   
+                        if ((x1 < x0) || (y1 < y0)) return false;
+                        roiRegion.css({left: x0, top: y0, width: x1-x0, height: y1-y0 });
+                    });               
+                roiControl.find(".roi-reset")
+                    .click(function () {
+                        roiRegion.css({top:0, left:0, width: imageWidth, height: imageHeight});
+                        roiControl.find(".roi-region-text").val("(0,0) -> (" + imageWidth + "," + imageHeight + ")");
+                    });  
+                roiControl.find(".roiColor")
+                    .css("color", color)
+                    .colorpicker({
+                        color: color
+                    })
+                    .on("changeColor", function (e) {
+                        var color = e.color.toString('rgba');
+                        $(this).css("color", color);
+                        roiRegion.css("border-color", color); 
+                    });
+                roiControl.find(".add-slider").slider({
+                    min: -255,
+                    max: 255,
+                    create: function() {
+                        roiControl.find(".add-slider-handle").text( $( this ).slider( "value" ) );
+                    },
+                    slide: function( event, ui ) {
+                        roiControl.find(".add-slider-handle").text( ui.value );
+                    },
+                    stop: function(event, ui) {
+                        if (roiControl.find(".roi-state").is(".active"))
+                            updateImage();
+                    }
+                });
+                roiControl.find(".binarize-slider").slider({
+                    range: true,
+                    min: 0,
+                    max:255,
+                    values: [100, 255],
+                    create: function() {
+                        var values = $( this ).slider( "values" );
+                        roiControl.find(".binarize-slider-handle-low").text( values[0]);
+                        roiControl.find(".binarize-slider-handle-high").text( values[1]);
+                    },                    
+                    slide: function( event, ui ) {
+                        roiControl.find(".binarize-slider-handle-low").text( ui.values[0]);
+                        roiControl.find(".binarize-slider-handle-high").text( ui.values[1]);
+                    },
+                    stop: function(event, ui) {
+                        if (roiControl.find(".roi-state").is(".active"))
+                            updateImage();
+                    }                    
+                });
+                roiControl.find(".gaus-slider-gs").slider({
+                });
+                roiControl.find(".gaus-slider-br").slider({
+                });                
+                roiControl.find(".grayWay").change(function () {
+                    if (roiControl.find(".roi-state").is(".active"))
+                        updateImage();           
+                });   
+                roiControl.find(".operation").change(function () {
+                    roiControl.find(".op-opts").hide();
+                    roiControl.find("." + $(this).val() + "-opts").show();                
+                }).change();                       
+                roiControl.find(".roi-state").click(function () {
+                    setTimeout(updateImage, 100);
+                });
+                roiControl.find(".roi-select").click(function () {
+                    if (!$(this).is(".active"))
+                    {
+                        roiControl.closest("#rois").find(".roi-select.active").toggleClass("active");
+                        activeRoi = roiId;
+                    } else {
+                        activeRoi = -1;
+                    }
+                });
+                rois.push({ control: roiControl, rect:roiRegion });
+            }
+
+            $("#addROI").click(function () {
+                initROI();
+            });
+
+            iH.mousedown(function (e) {
+                if ((activeRoi == -1) || (activeRoi >= rois.length)) return false;
+                if (regionSelectionStarted) 
+                {
+                    iH.mouseup(e);
+                } else 
+                {
+                    var iHo = iH.offset();
+                    var roi = rois[activeRoi];
+                    roi.rect.roi_startX = e.pageX - iHo.left;
+                    roi.rect.roi_startY = e.pageY - iHo.top;
+                    roi.rect.css({left: roi.rect.roi_startX, top: roi.rect.roi_startY, width: 0, height: 0 });
+                    
+                    regionSelectionStarted = true;
+                }
+            });
+            
+            iH.mousemove(function (e) {
+                if ((activeRoi == -1) || (activeRoi >= rois.length)) return false;
+                if (!regionSelectionStarted) return;
+                var iHo = iH.offset();        
+                var roi = rois[activeRoi];            
+                var endX = e.pageX - iHo.left;
+                var endY = e.pageY - iHo.top;   
+                var startX = roi.rect.roi_startX;
+                var startY = roi.rect.roi_startY;                
+                var x = Math.round(Math.max(Math.min(endX, startX), 0));
+                var y = Math.round(Math.max(Math.min(endY, startY), 0));
+                var xw = Math.round(Math.abs(endX - startX));
+                var yh = Math.round(Math.abs(endY - startY));
+                var x2 = Math.min(x + xw, imageWidth);
+                var y2 = Math.min(y + yh, imageHeight);
+                roi.rect.css({"left": x, "top": y, "width": x2-x, "height": y2-y });
+                roi.control.find(".roi-region-text").val("(" + x + "," + y + ") -> (" + x2 + "," + y2 + ")");
+            });
+
+            iH.mouseup(function (e) {
+                if ((activeRoi == -1) || (activeRoi >= rois.length)) return false;
+                var iHo = iH.offset();
+                var roi = rois[activeRoi];            
+                var endX = e.pageX - iHo.left;
+                var endY = e.pageY - iHo.top;   
+                var startX = roi.rect.roi_startX;
+                var startY = roi.rect.roi_startY;                
+                var x = Math.round(Math.max(Math.min(endX, startX), 0));
+                var y = Math.round(Math.max(Math.min(endY, startY), 0));
+                var xw = Math.round(Math.abs(endX - startX));
+                var yh = Math.round(Math.abs(endY - startY));
+                var x2 = Math.min(x + xw, imageWidth);
+                var y2 = Math.min(y + yh, imageHeight);
+                roi.rect.css({"left": x, "top": y, "width": x2-x, "height": y2-y });
+                roi.control.find(".roi-region-text").val("(" + x + "," + y + ") -> (" + x2 + "," + y2 + ")");
+                regionSelectionStarted = false;
+                if (roi.control.find(".roi-state").is(".active"))
+                    updateImage();
+            });                    
+            
+            imgFile.change(function () {                
+                if (this.files && this.files[0])
+                {
+                    var reader = new FileReader();
+                    download.attr("download", this.files[0].name);
+                    reader.onload = function(e) {
+                        sourceImage.attr('src', e.target.result)
+                        download.attr("href", e.target.result);
+                            //.show('slow');
+                        sourceImage[0].onload = function () {
+                            sourceImageNotSelected.hide();
+                            sourceImage.show();
+                            imageWidth = this.width;
+                            imageHeight = this.height;                            
+                            sourceImage[0].onload = function () {};
+                        }
+                        
+                        $.ajax(
+                                {
+                                    url: "/api/image", 
+                                    type: "POST",
+                                    data: new FormData($("#imgForm")[0]),
+                                    cache: false,
+                                    contentType: false,
+                                    processData: false,
+                                    success: function(data) {
+                                        $("#menu").css("display", "inline-block");
+                                        initROI();                          
+                                    }
+                                }
+                            );                        
+                    }
+                    reader.readAsDataURL(this.files[0]);                    
+                }
+            });            
+        </script>
+    </body>    
+</html>

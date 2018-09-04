@@ -1,0 +1,13 @@
+web/wwwroot/node_modules/*
+bin/*
+input/*
+readme.txt
+iptool/image.cpp
+iptool/image.h
+iptool/main.cpp
+iptool/utility.cpp
+iptool/utility.h
+output/*
+web/bin/*
+web/obj/*
+web/wwwroot/package-lock.json

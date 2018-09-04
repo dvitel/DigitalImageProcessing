@@ -1,0 +1,22 @@
+{
+    "files.associations": {
+        "sstream": "cpp",
+        "iosfwd": "cpp",
+        "istream": "cpp",
+        "optional": "cpp",
+        "ostream": "cpp",
+        "system_error": "cpp",
+        "type_traits": "cpp",
+        "cmath": "cpp",
+        "*.tcc": "cpp",
+        "string_view": "cpp"
+    },
+    "FSharp.excludeProjectDirectories": [
+        ".git",
+        "paket-files",
+        "bin",
+        "input",
+        "iptool",
+        "output"
+    ]
+}
