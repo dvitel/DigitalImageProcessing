@@ -1,40 +1,48 @@
 #ifndef LIB_H
 #define LIB_H
 
+#if defined(_MSC_VER)
+    //  Microsoft 
+    #define EXPORT __declspec(dllexport)
+    #define IMPORT __declspec(dllimport)
+#elif defined(__GNUC__)
+    //  GCC
+    #define EXPORT __attribute__((visibility("default"))) 
+    #define IMPORT
+#else
+    //  do nothing and hope for the best?
+    #define EXPORT
+    #define IMPORT
+    #pragma warning Unknown dynamic link import/export semantics.
+#endif
+
 #include "image.h"
 #include <sstream>
 #include <math.h>
 
-struct __declspec(dllexport) IMG {
-    unsigned char* ch;
-    int width; 
-    int height;
-    int stride;
-};
+extern "C" {
+    struct EXPORT IMG {
+        unsigned char* ch;
+        int width; 
+        int height;
+        int stride;
+    };
 
-struct __declspec(dllexport) ROI {
-    int x1; 
-    int x2;
-    int y1;
-    int y2;
-};
+    struct EXPORT ROI {
+        int x1; 
+        int x2;
+        int y1;
+        int y2;
+    };
 
-enum GRAY_WAY { R=0, G=1, B=2, L1=3, L2=4};
-//int allocatePpm(char* ppm);
-//int allocatePpm(int ppmId); //create copy
-//void dealocatePpm(int ppmId);
-//char* getPpm(int ppmId);
-extern "C" void __declspec(dllexport) add(IMG src, IMG tgt, int value);
-extern "C" void __declspec(dllexport) addROI(IMG src, IMG tgt, ROI roi, int value);
-extern "C" void __declspec(dllexport) gray(IMG src, IMG tgt, GRAY_WAY grayWay);
-extern "C" void __declspec(dllexport) grayROI(IMG src, IMG tgt, ROI roi, GRAY_WAY grayWay);
-extern "C" void __declspec(dllexport) binarize(IMG src, IMG tgt, ROI roi, unsigned char t1, unsigned char t2);
-extern "C" int __declspec(dllexport) gausFilter2D(IMG src, IMG tgt, ROI roi, float gs, int br);
-//extern "C" int __declspec(dllexport) gausFilter1Dx2(IMG src, IMG tgt, ROI roi, float gs, int br);
-
-//void binarize(int srcPpmId, int tgtPpmId, int threshold);
-//void binarize(int srcPpmId, int tgtPpmId, int thresholdLow, int thresholdHigh);
-//void scale(int srcPpmId, int tgtPpmId, float ratio);
+    enum GRAY_WAY { R=0, G=1, B=2, L1=3, L2=4};
+    void EXPORT add(IMG src, IMG tgt, int value);
+    void EXPORT addROI(IMG src, IMG tgt, ROI roi, int value);
+    void EXPORT gray(IMG src, IMG tgt, GRAY_WAY grayWay);
+    void EXPORT grayROI(IMG src, IMG tgt, ROI roi, GRAY_WAY grayWay);
+    void EXPORT binarize(IMG src, IMG tgt, ROI roi, unsigned char t1, unsigned char t2);
+    int EXPORT gausFilter2D(IMG src, IMG tgt, ROI roi, float gs, int br);
+}
 
 #endif
 

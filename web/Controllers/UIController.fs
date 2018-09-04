@@ -17,6 +17,6 @@ type UIController () =
     member this.Get(): Task<string> =
         async {
             this.HttpContext.Session.SetString("id", Guid.NewGuid().ToString())
-            let! fileContent = Async.AwaitTask(File.ReadAllTextAsync("wwwroot\\index.html"))
+            let! fileContent = Async.AwaitTask(File.ReadAllTextAsync(System.IO.Path.Combine("wwwroot", "index.html")))
             return fileContent
         } |> Async.StartAsTask

@@ -9,14 +9,14 @@ unsigned char checkValue(int value) {
 	return value;
 }
 /*-----------------------------------------------------------------------**/
-extern "C" void __declspec(dllexport) add(IMG src, IMG tgt, int value)
+void add(IMG src, IMG tgt, int value)
 {
 	//printf("Width: %d, height: %d, stride1: %d, stride2: %d\r\n", width, height, srcStride, tgtStride);
 	ROI roi = { .x1 = 0, .x2=src.width, .y1=0, .y2=src.height};
 	addROI(src, tgt, roi, value);
 }
 
-extern "C" void __declspec(dllexport) addROI(IMG src, IMG tgt, ROI roi, int value)
+void addROI(IMG src, IMG tgt, ROI roi, int value)
 {
 	//printf("Width: %d, height: %d, stride1: %d, stride2: %d\r\n", width, height, srcStride, tgtStride);
 	for (int y=roi.y1; y < roi.y2; y++)
@@ -31,7 +31,7 @@ extern "C" void __declspec(dllexport) addROI(IMG src, IMG tgt, ROI roi, int valu
 	}
 }
 
-extern "C" void __declspec(dllexport) grayROI(IMG src, IMG tgt, ROI roi, GRAY_WAY grayWay)
+void grayROI(IMG src, IMG tgt, ROI roi, GRAY_WAY grayWay)
 {
 	//printf("Width: %d, height: %d, stride1: %d, stride2: %d\r\n", width, height, srcStride, tgtStride);
 	switch (grayWay)
@@ -105,7 +105,7 @@ extern "C" void __declspec(dllexport) grayROI(IMG src, IMG tgt, ROI roi, GRAY_WA
 	}
 }
 
-extern "C" void __declspec(dllexport) gray(IMG src, IMG tgt, GRAY_WAY grayWay)
+void gray(IMG src, IMG tgt, GRAY_WAY grayWay)
 {
 	ROI roi = { .x1 = 0, .x2=src.width, .y1=0, .y2=src.height};
 	grayROI(src, tgt, roi, grayWay);
@@ -118,7 +118,7 @@ inline void checkPixelChannelAndSet(IMG src, IMG tgt, int address, unsigned char
 	else tgt.ch[address] = 255;
 }
 
-extern "C" void __declspec(dllexport) binarize2(IMG src, IMG tgt, ROI roi, unsigned char t1, unsigned char t2){
+void binarize(IMG src, IMG tgt, ROI roi, unsigned char t1, unsigned char t2){
 	for (int y=roi.y1; y < roi.y2; y++)
 	{
 		int srcShift = src.stride * y;
@@ -146,7 +146,7 @@ inline int windowSize(float gs) {
 	return floor(gs * 3);// sqrt(2.0));
 }
 
-extern "C" int __declspec(dllexport) gausFilter2D(IMG src, IMG tgt, ROI roi, float gs, int br)
+int gausFilter2D(IMG src, IMG tgt, ROI roi, float gs, int br)
 {
 	int ws = windowSize(gs);
 	int s = 2*ws + 1;
@@ -193,7 +193,7 @@ extern "C" int __declspec(dllexport) gausFilter2D(IMG src, IMG tgt, ROI roi, flo
 }
 
 /*
-extern "C" int __declspec(dllexport) gausFilter1Dx2(IMG src, IMG tgt, ROI roi, float gs, int br)
+extern "C" int EXPORT gausFilter1Dx2(IMG src, IMG tgt, ROI roi, float gs, int br)
 {
 	int ws = windowSize(gs);
 	int s = 2*ws + 1;
