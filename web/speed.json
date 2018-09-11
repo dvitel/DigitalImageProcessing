@@ -1,0 +1,201 @@
+﻿{
+  "images": 
+  [
+      {
+          "inputFile": "../input/128x128.jpg",
+          "outputFile": "../output/128x128.1.jpg",
+          "ops": 
+              [
+                {
+                    "id": "gaus1D",
+                    "parameters": {
+                        "gs": 3, 
+                        "br": 20
+                    }
+                }                      
+              ]
+      },
+      {
+        "inputFile": "../input/256x256.jpg",
+        "outputFile": "../output/256x256.1.jpg",
+        "ops": 
+            [
+              {
+                  "id": "gaus1D",
+                  "parameters": {
+                      "gs": 3, 
+                      "br": 20
+                  }
+              }                      
+            ]
+        },
+        {
+            "inputFile": "../input/512x512.jpg",
+            "outputFile": "../output/512x512.1.jpg",
+            "ops": 
+                [
+                  {
+                      "id": "gaus1D",
+                      "parameters": {
+                          "gs": 3, 
+                          "br": 20
+                      }
+                  }                      
+                ]
+        },
+        {
+            "inputFile": "../input/768x768.jpg",
+            "outputFile": "../output/768x768.1.jpg",
+            "ops": 
+                [
+                  {
+                      "id": "gaus1D",
+                      "parameters": {
+                          "gs": 3, 
+                          "br": 20
+                      }
+                  }                      
+                ]
+        },         
+        {
+            "inputFile": "../input/1024x1024.jpg",
+            "outputFile": "../output/1024x1024.1.jpg",
+            "ops": 
+                [
+                  {
+                      "id": "gaus1D",
+                      "parameters": {
+                          "gs": 3, 
+                          "br": 20
+                      }
+                  }                      
+                ]
+        },
+        {
+            "inputFile": "../input/1536x1536.jpg",
+            "outputFile": "../output/1536x1536.1.jpg",
+            "ops": 
+                [
+                  {
+                      "id": "gaus1D",
+                      "parameters": {
+                          "gs": 3, 
+                          "br": 20
+                      }
+                  }                      
+                ]
+        },        
+        {
+            "inputFile": "../input/2048x2048.jpg",
+            "outputFile": "../output/2048x2048.1.jpg",
+            "ops": 
+                [
+                  {
+                      "id": "gaus1D",
+                      "parameters": {
+                          "gs": 3, 
+                          "br": 20
+                      }
+                  }                      
+                ]
+        },
+        {
+            "inputFile": "../input/128x128.jpg",
+            "outputFile": "../output/128x128.2.jpg",
+            "ops": 
+                [
+                  {
+                      "id": "gaus1D",
+                      "parameters": {
+                          "gs": 3, 
+                          "br": 20
+                      }
+                  }                      
+                ]
+        },
+        {
+          "inputFile": "../input/256x256.jpg",
+          "outputFile": "../output/256x256.2.jpg",
+          "ops": 
+              [
+                {
+                    "id": "gaus",
+                    "parameters": {
+                        "gs": 3, 
+                        "br": 20
+                    }
+                }                      
+              ]
+          },
+          {
+              "inputFile": "../input/512x512.jpg",
+              "outputFile": "../output/512x512.2.jpg",
+              "ops": 
+                  [
+                    {
+                        "id": "gaus",
+                        "parameters": {
+                            "gs": 3, 
+                            "br": 20
+                        }
+                    }                      
+                  ]
+          },
+          {
+              "inputFile": "../input/768x768.jpg",
+              "outputFile": "../output/768x768.2.jpg",
+              "ops": 
+                  [
+                    {
+                        "id": "gaus",
+                        "parameters": {
+                            "gs": 3, 
+                            "br": 20
+                        }
+                    }                      
+                  ]
+          },         
+          {
+              "inputFile": "../input/1024x1024.jpg",
+              "outputFile": "../output/1024x1024.2.jpg",
+              "ops": 
+                  [
+                    {
+                        "id": "gaus",
+                        "parameters": {
+                            "gs": 3, 
+                            "br": 20
+                        }
+                    }                      
+                  ]
+          },
+          {
+              "inputFile": "../input/1536x1536.jpg",
+              "outputFile": "../output/1536x1536.2.jpg",
+              "ops": 
+                  [
+                    {
+                        "id": "gaus",
+                        "parameters": {
+                            "gs": 3, 
+                            "br": 20
+                        }
+                    }                      
+                  ]
+          },        
+          {
+              "inputFile": "../input/2048x2048.jpg",
+              "outputFile": "../output/2048x2048.2.jpg",
+              "ops": 
+                  [
+                    {
+                        "id": "gaus",
+                        "parameters": {
+                            "gs": 3, 
+                            "br": 20
+                        }
+                    }                      
+                  ]
+          }
+  ]  
+}

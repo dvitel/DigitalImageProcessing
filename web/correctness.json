@@ -1,0 +1,25 @@
+﻿{
+  "images": 
+  [
+      {
+          "inputFile": "../input/baboon.jpg",
+          "outputFile": "../output/b1.jpg",
+          "ops": 
+              [
+                {
+                    "id": "gaus1D",
+                    "parameters": {
+                        "gs": 0.21, 
+                        "br": 20
+                    },
+                    "roi": {
+                        "x1": 0,
+                        "y1": 0,
+                        "x2": 9,
+                        "y2": 9
+                    }
+                }                      
+              ]
+      }
+  ]  
+}
