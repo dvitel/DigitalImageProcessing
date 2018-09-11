@@ -14,3 +14,4 @@ web/wwwroot/package-lock.json
 console/bin/*
 console/obj/*
 lib/*
+publish/*

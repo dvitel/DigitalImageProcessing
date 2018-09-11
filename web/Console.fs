@@ -52,7 +52,7 @@ type ImageConfig() =
                             }             
                     match Op.Parse(op.id) with 
                     | Add -> 
-                        match Int32.TryParse(op.parameters.["value"]) with 
+                        match Int32.TryParse(op.parameters.GetValueOrDefault("value", "")) with 
                         | (true, v) ->
                             let ms =  
                                 doNativeOp(img, img, timer, fun imgInfo tgtInfo ->
@@ -62,7 +62,7 @@ type ImageConfig() =
                             printfn "[%s] op %s requires parameter 'value'" x.inputFile op.id
                         img
                     | Gray -> 
-                        let grayWayStr = op.parameters.["way"] 
+                        let grayWayStr = op.parameters.GetValueOrDefault("way", "")
                         let grayWay, grayWayStr = 
                             match grayWayStr with 
                             | "redChannel" -> 0, grayWayStr
@@ -77,7 +77,7 @@ type ImageConfig() =
                         printfn "[%s] graying by %s: %dms" x.inputFile grayWayStr ms
                         img
                     | Binarize -> 
-                        match Byte.TryParse(op.parameters.["t1"]), Byte.TryParse(op.parameters.["t2"]) with 
+                        match Byte.TryParse(op.parameters.GetValueOrDefault("t1", "")), Byte.TryParse(op.parameters.GetValueOrDefault("t2", "")) with 
                         | (true, t1), (true, t2) -> 
                             let ms = 
                                 doNativeOp(img, img, timer, fun imgInfo tgtInfo ->
@@ -96,7 +96,7 @@ type ImageConfig() =
                             printfn "[%s] gaus 2D gs %.2f, br %d, ws %d: %dms" x.inputFile gs br ws ms
                             img.Dispose()                            
                             tgt                        
-                        match Single.TryParse(op.parameters.["gs"]), Int32.TryParse(op.parameters.["br"]) with 
+                        match Single.TryParse(op.parameters.GetValueOrDefault("gs", "")), Int32.TryParse(op.parameters.GetValueOrDefault("br", "")) with 
                         | (true, gs), (true, br) -> call gs br
                         | (true, gs), _ -> call gs 0
                         | _, _ ->
@@ -112,17 +112,17 @@ type ImageConfig() =
                             printfn "[%s] gaus 1Dx2 gs %.2f, br %d, ws %d: %dms" x.inputFile gs br ws ms
                             img.Dispose()                            
                             tgt
-                        match Single.TryParse(op.parameters.["gs"]), Int32.TryParse(op.parameters.["br"]) with 
+                        match Single.TryParse(op.parameters.GetValueOrDefault("gs", "")), Int32.TryParse(op.parameters.GetValueOrDefault("br", "")) with 
                         | (true, gs), (true, br) -> call gs br
                         | (true, gs), _ -> call gs 0
                         | _, _ -> 
                             printfn "[%s] op %s requires parameter 'gs'" x.inputFile op.id    
                             img
                     | BinarizeC -> 
-                        match Int32.TryParse(op.parameters.["dist"]), 
-                            Byte.TryParse(op.parameters.["r"]), 
-                            Byte.TryParse(op.parameters.["g"]),
-                            Byte.TryParse(op.parameters.["b"]) with 
+                        match Int32.TryParse(op.parameters.GetValueOrDefault("dist", "")), 
+                            Byte.TryParse(op.parameters.GetValueOrDefault("r", "")), 
+                            Byte.TryParse(op.parameters.GetValueOrDefault("g", "")),
+                            Byte.TryParse(op.parameters.GetValueOrDefault("b", "")) with 
                         | (true, d), (true, r), (true, g), (true, b) -> 
                             let ms = 
                                 doNativeOp(img, img, timer, fun img tgt -> 
