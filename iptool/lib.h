@@ -22,7 +22,6 @@
     #define LOG(fmt, ...)
 #endif
 
-#include "image.h"
 #include <sstream>
 #include <math.h>
 

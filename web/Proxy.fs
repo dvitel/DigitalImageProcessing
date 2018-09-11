@@ -1,6 +1,8 @@
 module web.Native
 open System
 open System.Runtime.InteropServices
+open System.Drawing
+open System.Diagnostics
 
 [<Struct>]
 [<StructLayout(LayoutKind.Sequential)>] 
@@ -43,3 +45,60 @@ extern int gausFilter1Dx2(IMG src, IMG tgt, ROI roi, float32 gs, int br)
 [<System.Runtime.InteropServices.DllImport(@"dip.dll", EntryPoint="binarizeColor")>]
 extern void binarizeColor(IMG src, IMG tgt, ROI roi, int dist, byte r, byte g, byte b)
 
+let doNativeOp(img: Bitmap, tgtImg: Bitmap, sw: Stopwatch, f) = 
+    if img = tgtImg then 
+        let imgLock = img.LockBits(Rectangle(0, 0, img.Width, img.Height), Imaging.ImageLockMode.ReadWrite, Imaging.PixelFormat.Format24bppRgb)
+        let src = 
+            { 
+                ch = imgLock.Scan0
+                width = imgLock.Width
+                height = imgLock.Height
+                stride = imgLock.Stride
+            }
+        sw.Restart()
+        f src src
+        sw.Stop()
+        img.UnlockBits(imgLock)
+        sw.ElapsedMilliseconds
+    else         
+        let imgLock = img.LockBits(Rectangle(0, 0, img.Width, img.Height), Imaging.ImageLockMode.ReadWrite, Imaging.PixelFormat.Format24bppRgb)
+        let tgtImgLock = tgtImg.LockBits(Rectangle(0, 0, tgtImg.Width, tgtImg.Height), Imaging.ImageLockMode.ReadWrite, Imaging.PixelFormat.Format24bppRgb)        
+        let src = 
+            { 
+                ch = imgLock.Scan0
+                width = imgLock.Width
+                height = imgLock.Height
+                stride = imgLock.Stride
+            }
+        let tgt = 
+            { 
+                ch = tgtImgLock.Scan0
+                width = tgtImgLock.Width
+                height = tgtImgLock.Height
+                stride = tgtImgLock.Stride
+            }           
+        sw.Restart() 
+        f src tgt
+        sw.Stop()
+        img.UnlockBits(imgLock)
+        tgtImg.UnlockBits(tgtImgLock)
+        sw.ElapsedMilliseconds
+
+type Op = 
+    | Add 
+    | Gray 
+    | Binarize
+    | Gaus
+    | Gaus1D
+    | BinarizeC
+    | Unknown of string
+with 
+    static member Parse(str: string) = 
+        match str with 
+        | "add" -> Add
+        | "gray" -> Gray
+        | "binarize" -> Binarize
+        | "gaus" -> Gaus
+        | "gaus1D" -> Gaus1D
+        | "binarizeC" -> BinarizeC
+        | _ -> Unknown str

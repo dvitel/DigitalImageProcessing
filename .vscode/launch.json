@@ -65,9 +65,9 @@
             "name": "console",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "buildConsole",
-            "program": "${workspaceRoot}/console/bin/Debug/netcoreapp2.0/console.dll",
-            "args": [],
+            "preLaunchTask": "buildWeb",
+            "program": "${workspaceRoot}/web/bin/Debug/netcoreapp2.0/web.dll",
+            "args": ["-c", "${workspaceRoot}/web/appsettings.json"],
             "cwd": "${workspaceRoot}/console",
             "stopAtEntry": false,
             "env": {

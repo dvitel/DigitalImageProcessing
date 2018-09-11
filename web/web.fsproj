@@ -9,6 +9,7 @@
     <Compile Include="Controllers/UIController.fs" />
     <Compile Include="Controllers/ImageController.fs" />
     <Compile Include="Startup.fs" />
+    <Compile Include="Console.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
@@ -16,5 +17,11 @@
     <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.8" />
     <PackageReference Include="System.Drawing.Common" Version="4.5.0" />
   </ItemGroup>
+  <Target Name="CopyCustomContent" AfterTargets="AfterBuild">
+    <Copy SourceFiles="..\\lib\\dip.dll" DestinationFolder="$(OutDir)" />
+  </Target>
+  <Target Name="CopyCustomContentOnPublish" AfterTargets="Publish">
+    <Copy SourceFiles="..\\lib\\dip.dll" DestinationFolder="$(PublishDir)" />
+  </Target>  
 
 </Project>
