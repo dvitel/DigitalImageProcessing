@@ -92,7 +92,7 @@ void grayROI(IMG src, IMG tgt, ROI roi, GRAY_WAY grayWay)
 				int srcShift = src.stride * y;
 				int tgtShift = tgt.stride * y;
 				for (int x = roi.x1; x < roi.x2; x++) {
-					double sum = src.ch[srcShift + 3*x + 0]*src.ch[srcShift + 3*x + 0] + src.ch[srcShift + 3*x + 1]*src.ch[srcShift + 3*x + 1] + src.ch[srcShift + 3*x + 2]*src.ch[srcShift + 3*x + 2];
+					float sum = src.ch[srcShift + 3*x + 0]*src.ch[srcShift + 3*x + 0] + src.ch[srcShift + 3*x + 1]*src.ch[srcShift + 3*x + 1] + src.ch[srcShift + 3*x + 2]*src.ch[srcShift + 3*x + 2];
 					int avg = (int)(sqrt(sum) * 255.0 / 441.673); //magic number - sqrt(255^2 + 255^2 + 255^2)
 					tgt.ch[tgtShift + 3*x + 0] = avg;
 					tgt.ch[tgtShift + 3*x + 1] = avg; 
@@ -131,18 +131,18 @@ void binarize(IMG src, IMG tgt, ROI roi, unsigned char t1, unsigned char t2){
 	}
 }
 
-inline double gaus2DFunc(double r, double gs)
+inline float gaus2DFunc(float r, float gs)
 {
-	double gs2 = 2*gs*gs;
+	float gs2 = 2*gs*gs;
 	return exp(-r*r/gs2)/(3.14159265358979323846*gs2);
 }
 
-inline double gaus1DFunc(double x, double gs)
+inline float gaus1DFunc(float x, float gs)
 {
 	return exp(-x*x/(2*gs*gs))/(sqrt(2*3.14159265358979323846)*gs);
 }
 
-int gausFilter2D(IMG src, IMG tgt, ROI roi, double gs, int br)
+int gausFilter2D(IMG src, IMG tgt, ROI roi, float gs, int br)
 {		
 	int ws = gs * 3;
 	int s = 2*ws + 1;
@@ -152,24 +152,24 @@ int gausFilter2D(IMG src, IMG tgt, ROI roi, double gs, int br)
 	int roiX2 = roi.x2 - ws;
 	LOG("[gaus2D] gs=%f, br=%d, ws=%d, s=%d\n", gs, br, ws, s);
 	if ((roiY2 <= roiY1) || (roiX2 <= roiX1)) return s;
-	double* w = (double*)malloc(sizeof(double) * s * s);
+	float* w = (float*)malloc(sizeof(float) * s * s);
 	w[0]=10;
-	double norm = 0;
 	//window init	
-	LOG("WINDOW:\n");
+	LOG("WINDOW:\n");	
 	for (int i = -ws; i <= ws; i++)
 	{				
 		for (int j = -ws; j <= ws; j++)
 		{
-			double r = sqrt(i*i+j*j);
-			double gv = gaus2DFunc(r, gs);		
+			float r = sqrt(i*i+j*j);
+			float gv = gaus2DFunc(r, gs);		
 			LOG("%6.4f  ", gv);
-			norm += (w[(ws + i)*s + ws + j] = gv);
+			w[(ws + i)*s + ws + j] = gv;
 		}
 		LOG("\n");
 	}
 
 	LOG("ROI: \n");
+	#ifdef _DEBUG
 	for (int y = roi.y1; y < roi.y2; y++)
 	{
 		for (int x = roi.x1; x < roi.x2; x++) {
@@ -177,20 +177,8 @@ int gausFilter2D(IMG src, IMG tgt, ROI roi, double gs, int br)
 		}
 		LOG("\n");
 	}	
-	//LOG("\n");
-	//LOG("\n");
-	//window normalization
-	// LOG("-------\n");
-	// for (int i = -ws; i <= ws; i++)
-	// {
-	// 	for (int j = -ws; j <= ws; j++)
-	// 	{
-	// 		int index = (ws + i)*s + ws + j;
-	// 		w[index] /= norm;
-	// 		LOG("%f ", w[index]);
-	// 	}
-	// 	LOG("\n");
-	// }	
+	#endif
+
 	LOG("ROI*: \n");
 	for (int y = roiY1; y < roiY2; y++)
 	{
@@ -201,7 +189,7 @@ int gausFilter2D(IMG src, IMG tgt, ROI roi, double gs, int br)
 			//edges 2
 			int srcBaseAddress = srcShift + 3*x;
 			int tgtBaseAddress = tgtShift + 3*x;
-			double totalSum = br;
+			float totalSum = br;
 			for (int i = -ws; i <= ws; i++)
 			for (int j = -ws; j <= ws; j++)
 			{
@@ -213,6 +201,7 @@ int gausFilter2D(IMG src, IMG tgt, ROI roi, double gs, int br)
 		LOG("\n");
 	}
 	LOG("RESULT: \n");
+	#ifdef _DEBUG
 	for (int y = roi.y1; y < roi.y2; y++)
 	{
 		for (int x = roi.x1; x < roi.x2; x++) {
@@ -220,11 +209,12 @@ int gausFilter2D(IMG src, IMG tgt, ROI roi, double gs, int br)
 		}
 		LOG("\n");
 	}	
+	#endif
 	free(w);
 	return s;
 }
 
-int gausFilter1Dx2(IMG src, IMG tgt, ROI roi, double gs, int br)
+int gausFilter1Dx2(IMG src, IMG tgt, ROI roi, float gs, int br)
 {
 	int ws = gs * 3; //windowSize(gs);
 	int s = 2*ws + 1;
@@ -234,25 +224,18 @@ int gausFilter1Dx2(IMG src, IMG tgt, ROI roi, double gs, int br)
 	int roiX2 = roi.x2 - ws;
 	LOG("[gaus2D] gs=%f, br=%d, ws=%d, s=%d\n", gs, br, ws, s);
 	if ((roiY2 <= roiY1) || (roiX2 <= roiX1)) return s;
-	double* w = (double*)malloc(sizeof(double) * s);
-	double sum = 0;
+	float* w = (float*)malloc(sizeof(float) * s);
 	//window init	
 	LOG("WINDOW: \n");
 	for (int i = -ws; i <= ws; i++)
 	{
-		double gv = gaus1DFunc(i, gs);
-		sum += (w[ws + i] = gv);
+		float gv = gaus1DFunc(i, gs);
+		w[ws + i] = gv;
 		LOG("%6.4f  ", gv);
 	}
-	//LOG("\n");
-	//LOG("\n");
-	//window normalization
-	// for (int i = -ws; i <= ws; i++)
-	// {
-	// 	w[ws + i] /= sum;
-	// }
-	//if ((roiY2 <= roiY1) || (roiX2 <= roiX1)) return s; //NOOP
+
 	LOG("\nROI: \n");
+	#ifdef _DEBUG
 	for (int y = roi.y1; y < roi.y2; y++)
 	{
 		for (int x = roi.x1; x < roi.x2; x++) {
@@ -260,11 +243,12 @@ int gausFilter1Dx2(IMG src, IMG tgt, ROI roi, double gs, int br)
 		}
 		LOG("\n");
 	}	
+	#endif
 
 
 	int iWidth = roi.y2 - roi.y1;
 	int iHeight = roiX2 - roiX1;
-	double* intermediate = (double*)malloc(sizeof(double) * iHeight * iWidth);
+	float* intermediate = (float*)malloc(sizeof(float) * iHeight * iWidth);
 	//first pass: src --> intermediate
 	for (int y = roi.y1; y < roi.y2; y++)
 	{
@@ -272,7 +256,7 @@ int gausFilter1Dx2(IMG src, IMG tgt, ROI roi, double gs, int br)
 		int yi = y - roi.y1;		
 		for (int x = roiX1; x < roiX2; x++) {			
 			//int srcBaseAddress = srcShift + 3*x;
-			double sum = 0;
+			float sum = 0;
 			for (int i = -ws; i <= ws; i++)
 			{
 				sum += w[ws + i] * src.ch[srcShift + 3*(x+i)];
@@ -282,6 +266,7 @@ int gausFilter1Dx2(IMG src, IMG tgt, ROI roi, double gs, int br)
 	}	
 
 	LOG("INTERMEDIATE: \n");
+	#ifdef _DEBUG
 	for (int x = roiX1; x < roiX2; x++) {
 		for (int y = roi.y1; y < roi.y2; y++)
 		{
@@ -290,6 +275,7 @@ int gausFilter1Dx2(IMG src, IMG tgt, ROI roi, double gs, int br)
 		}	
 		LOG("\n");
 	}
+	#endif
 	//second pass: intermediate --> target
 	LOG("\nROI*: \n");
 	for (int y = roiY1; y < roiY2; y++)
@@ -299,7 +285,7 @@ int gausFilter1Dx2(IMG src, IMG tgt, ROI roi, double gs, int br)
 		for (int x = roiX1; x < roiX2; x++) {			
 			int tgtBaseAddress = tgtShift + 3*x;
 			int iindex = iWidth* (x-roiX1) + yi;
-			double sum = br;
+			float sum = br;
 			for (int i = -ws; i <= ws; i++)
 			{
 				sum += w[ws + i] * intermediate[iindex + i];
@@ -311,6 +297,7 @@ int gausFilter1Dx2(IMG src, IMG tgt, ROI roi, double gs, int br)
 	}	
 
 	LOG("RESULT: \n");
+	#ifdef _DEBUG
 	for (int y = roi.y1; y < roi.y2; y++)
 	{
 		for (int x = roi.x1; x < roi.x2; x++) {
@@ -318,6 +305,7 @@ int gausFilter1Dx2(IMG src, IMG tgt, ROI roi, double gs, int br)
 		}
 		LOG("\n");
 	}	
+	#endif
 		
 	free(intermediate);
 	free(w);

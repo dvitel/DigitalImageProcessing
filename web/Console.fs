@@ -96,7 +96,7 @@ type ImageConfig() =
                             printfn "[%s] gaus 2D gs %.2f, br %d, ws %d: %dms" x.inputFile gs br ws ms
                             img.Dispose()                            
                             tgt                        
-                        match Double.TryParse(op.parameters.GetValueOrDefault("gs", "")), Int32.TryParse(op.parameters.GetValueOrDefault("br", "")) with 
+                        match Single.TryParse(op.parameters.GetValueOrDefault("gs", "")), Int32.TryParse(op.parameters.GetValueOrDefault("br", "")) with 
                         | (true, gs), (true, br) -> call gs br
                         | (true, gs), _ -> call gs 0
                         | _, _ ->
@@ -112,7 +112,7 @@ type ImageConfig() =
                             printfn "[%s] gaus 1Dx2 gs %.2f, br %d, ws %d: %dms" x.inputFile gs br ws ms
                             img.Dispose()                            
                             tgt
-                        match Double.TryParse(op.parameters.GetValueOrDefault("gs", "")), Int32.TryParse(op.parameters.GetValueOrDefault("br", "")) with 
+                        match Single.TryParse(op.parameters.GetValueOrDefault("gs", "")), Int32.TryParse(op.parameters.GetValueOrDefault("br", "")) with 
                         | (true, gs), (true, br) -> call gs br
                         | (true, gs), _ -> call gs 0
                         | _, _ -> 

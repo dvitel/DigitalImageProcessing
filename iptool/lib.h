@@ -46,8 +46,8 @@ extern "C" {
     void EXPORT gray(IMG src, IMG tgt, GRAY_WAY grayWay);
     void EXPORT grayROI(IMG src, IMG tgt, ROI roi, GRAY_WAY grayWay);
     void EXPORT binarize(IMG src, IMG tgt, ROI roi, unsigned char t1, unsigned char t2);
-    int EXPORT gausFilter2D(IMG src, IMG tgt, ROI roi, double gs, int br);
-    int EXPORT gausFilter1Dx2(IMG src, IMG tgt, ROI roi, double gs, int br);
+    int EXPORT gausFilter2D(IMG src, IMG tgt, ROI roi, float gs, int br);
+    int EXPORT gausFilter1Dx2(IMG src, IMG tgt, ROI roi, float gs, int br);
     void EXPORT binarizeColor(IMG src, IMG tgt, ROI roi, int dist, unsigned char r, unsigned char g, unsigned char b);
 }
 

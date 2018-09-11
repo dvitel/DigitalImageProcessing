@@ -103,7 +103,7 @@ type ImageController (cache: IMemoryCache) =
                                 binarize(src, tgt, roi, t1, t2))
                         img, (sprintf "g-binarize t1 %d, t2 %d" t1 t2, tm)::timings
                     | Gaus -> 
-                        let gs = p.["gs"].Value<float>()
+                        let gs = p.["gs"].Value<float32>()
                         let br = p.["br"].Value<int>()
                         let tgt = new Bitmap(img)
                         let tm = 
@@ -112,7 +112,7 @@ type ImageController (cache: IMemoryCache) =
                         img.Dispose()
                         tgt, (sprintf "gaus 2D gs %.2f, br %d" gs br, tm)::timings
                     | Gaus1D -> 
-                        let gs = p.["gs"].Value<float>()
+                        let gs = p.["gs"].Value<float32>()
                         let br = p.["br"].Value<int>()
                         let tgt = new Bitmap(img)
                         let tm = 
