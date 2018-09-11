@@ -141,23 +141,23 @@ Benefits of console app:
 ### Web UI operation examples
 1. Graying of the ROI:
 
-![ROI graying](img/p1.png)
+![ROI graying](img/p1.PNG)
 
 2. 2 ROIs with different operations
 
-![2 ROIs](img/p2.png)
+![2 ROIs](img/p2.PNG)
 
 3. Gray image binarization
 
-![Gray image binarization](img/p3.png)
+![Gray image binarization](img/p3.PNG)
 
 4. Color image binarization
 
-![Color image binarization](img/p4.png)
+![Color image binarization](img/p4.PNG)
 
 5. Blur with Gaussian filter
 
-![Blur with Gaussian filter](img/p5.png)
+![Blur with Gaussian filter](img/p5.PNG)
 
 ### Console app output
 Here is an example of run of console app with config file which gives images from input folder to dip.dll and collect results into output folder.
@@ -308,6 +308,6 @@ Found 14 images
 
 Plot of times from image size for ws=7 and 19 is given on next chart:
 
-![time of execution from image size for gaus2D and gaus1D](img/speedGaus.png)
+![time of execution from image size for gaus2D and gaus1D](img/speedGaus.PNG)
 
 Speedup for ws=7 goes to x1.5 on large images and for ws=19 - to ~ x6 times.
