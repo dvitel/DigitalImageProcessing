@@ -5,11 +5,12 @@ WORKDIR /app
 RUN apk --update --no-cache add bash g++
 COPY ./web/. ./web/
 COPY ./iptool/. ./iptool/
+RUN mkdir lib
+RUN g++ -c -I./iptool/ -o ./lib/dip.dll.o -fPIC ./iptool/lib.cpp
+RUN g++ -shared -o ./lib/dip.dll ./lib/dip.dll.o
+RUN nm -D ./lib/dip.dll
 RUN dotnet restore ./web/
 RUN dotnet publish -c Debug -o ../out ./web/
-RUN g++ -c -I./iptool/ -o ./iptool/dip.dll.o -fPIC ./iptool/lib.cpp
-RUN g++ -shared -o ./out/dip.dll ./iptool/dip.dll.o
-RUN nm -D ./out/dip.dll
 
 # copy everything else and build app
 # COPY ../web/. ./web/
