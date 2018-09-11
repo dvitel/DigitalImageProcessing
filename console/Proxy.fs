@@ -1,4 +1,4 @@
-module web.Native
+module console.Native
 open System
 open System.Runtime.InteropServices
 
@@ -35,11 +35,9 @@ extern void gray(IMG src, IMG tgt, int grayWay)
 extern void binarize(IMG src, IMG tgt, ROI roi, byte t1, byte t2)
 
 [<System.Runtime.InteropServices.DllImport(@"dip.dll", EntryPoint="gausFilter2D")>]
-extern int gausFilter2D(IMG src, IMG tgt, ROI roi, float32 gs, int br)
+extern int gausFilter2D(IMG src, IMG tgt, ROI roi, float gs, int br)
 
-[<System.Runtime.InteropServices.DllImport(@"dip.dll", EntryPoint="gausFilter2D")>]
-extern int gausFilter1Dx2(IMG src, IMG tgt, ROI roi, float32 gs, int br)
+[<System.Runtime.InteropServices.DllImport(@"dip.dll", EntryPoint="gausFilter1Dx2")>]
+extern int gausFilter1Dx2(IMG src, IMG tgt, ROI roi, float gs, int br)
 
-[<System.Runtime.InteropServices.DllImport(@"dip.dll", EntryPoint="binarizeColor")>]
-extern void binarizeColor(IMG src, IMG tgt, ROI roi, int dist, byte r, byte g, byte b)
 

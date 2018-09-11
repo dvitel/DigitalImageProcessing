@@ -29,7 +29,9 @@
                 vertical-align: middle;
             }
 
-            .ui-slider-handle.add-slider-handle, .ui-slider-handle.binarize-slider-handle-low, .ui-slider-handle.binarize-slider-handle-high {
+            .ui-slider-handle.add-slider-handle, .ui-slider-handle.binarize-slider-handle-low, 
+            .ui-slider-handle.binarize-slider-handle-high, .ui-slider-handle.gaus-slider-handle-gs, 
+            .ui-slider-handle.gaus-slider-handle-br, .ui-slider-handle.binarizeC-slider-handle {
                 width: 2.5em;
                 height: 1.6em;
                 font-size: 60%;
@@ -97,6 +99,9 @@
             .roi-reset {
                 cursor: pointer;
             }
+            #log {
+                margin-top: 1ex;
+            }
         </style>        
     </head>
     <body>
@@ -134,8 +139,10 @@
                                 <select name="operation" class="operation form-control form-control-sm">
                                     <option value="gray">C-img: Graying</option>
                                     <option value="add">G-img: Brightening</option>  
-                                    <option value="binarize">G-img: Binarize</option>                      
-                                    <option value="gaus">Gaussian filter</option> 
+                                    <option value="binarize">G-img: Binarize</option>
+                                    <option value="binarizeC">C-img: Binarize</option>                       
+                                    <option value="gaus">G-img: Gaussian filter</option> 
+                                    <option value="gaus1D">G-img: Gaussian filter 1Dx2</option>                                     
                                     <!-- <option value="bin">Binarization</option>
                                     <option value="sc">Scaling</option> -->
                                 </select> 
@@ -160,22 +167,37 @@
                                     <div class="ui-slider-handle binarize-slider-handle-high"></div>
                                 </div>
                             </div>    
-                            <div class="op-opts gaus-opts">
-                                <div class="gaus-slider-gs">
-                                    <div class="ui-slider-handle gaus-slider-handle-gs"></div>
+                            <div class="op-opts binarizeC-opts">
+                                <div>
+                                    Color center: <i class="fas fa-square-full binarizeC-center"></i>&nbsp;<span class="binarizeC-center-text"></span>
                                 </div>
-                                <div class="gaus-slider-br">
-                                    <div class="ui-slider-handle gaus-slider-handle-br"></div>
+                                <div class="binarizeC-slider">
+                                    <div class="ui-slider-handle binarizeC-slider-handle"></div>
+                                </div>
+                            </div>                             
+                            <div class="op-opts gaus-opts gaus1D-opts">
+                                <div>
+                                    <span>GS: </span>&nbsp;<span class="gaus-opts-ws"></span>
+                                    <div class="gaus-slider-gs">
+                                        <div class="ui-slider-handle gaus-slider-handle-gs"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <span>BR: </span>
+                                    <div class="gaus-slider-br">
+                                        <div class="ui-slider-handle gaus-slider-handle-br"></div>
+                                    </div>
                                 </div>                                
-                            </div>                                                                                  
+                            </div>
                         </div>
                     </div>  
                     <div id="addROIHolder">
                         <a class="btn btn-outline-primary btn-sm" href="#" role="button" id="addROI">+ ROI</a>&nbsp;              
                         <a class="btn btn-outline-primary btn-sm" href="#" role="button" href="#" id="download" download="result.jpg">Download</a>
                     </div>
+                    <div id="log"></div>
                 </div>
-            </div>
+            </div>            
         </div>            
         <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
         <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.min.js" integrity="sha256-eGE6blurk5sHj+rmkfsGYeKyZx3M4bG+ZlFyA7Kns7E=" crossorigin="anonymous"></script>        
@@ -196,6 +218,7 @@
             var regionSelectionStarted = false;
             var rois = []
             var activeRoi = -1;
+            var log = $("#log");
             
             //var roi = null;
             //roiData = null;
@@ -236,6 +259,18 @@
                             var values = roi.control.find(".binarize-slider").slider("values");
                             o.p = { t1: values[0], t2: values[1] };
                         }
+                        if ((o.op == "gaus") || (o.op == "gaus1D")) 
+                        {
+                            var gs = roi.control.find(".gaus-slider-gs").slider("value");
+                            var br = roi.control.find(".gaus-slider-br").slider("value");
+                            o.p = { gs: gs, br: br };
+                        }
+                        if (o.op == "binarizeC")
+                        {
+                            var dist = roi.control.find(".binarizeC-slider").slider("value");
+                            var center = roi.control.find(".binarizeC-center").data('colorpicker').color.toRGB();
+                            o.p = { dist: dist, r: center.r, g:center.g, b:center.b };
+                        }
                         ops.push(o);
                     }
                 }
@@ -249,6 +284,15 @@
                             var dataUrl = "data:" + data.mime + ";base64," + data.img;
                             sourceImage.attr("src", dataUrl).attr("alt", "processing result");                    
                             download.attr("href", dataUrl);
+                            log.empty();
+                            if (data.timings && (data.timings.length > 0))
+                            {
+                                var ul = $("<ul class='lg list-group list-group-flush'>").appendTo(log);
+                                for (var i = 0; i < data.timings.length; i++) 
+                                {
+                                    $("<li class='list-group-item'>").text(data.timings[i].name + ": " + data.timings[i].time + "ms").appendTo(ul);
+                                }
+                            }
                         }
                     }
                 );                  
@@ -285,6 +329,8 @@
                     .click(function () {
                         roiRegion.css({top:0, left:0, width: imageWidth, height: imageHeight});
                         roiControl.find(".roi-region-text").val("(0,0) -> (" + imageWidth + "," + imageHeight + ")");
+                        if (roiControl.find(".roi-state").is(".active"))
+                            updateImage();                        
                     });  
                 roiControl.find(".roiColor")
                     .css("color", color)
@@ -292,9 +338,25 @@
                         color: color
                     })
                     .on("changeColor", function (e) {
-                        var color = e.color.toString('rgba');
+                        var color = e.color.toString('rgba');                        
                         $(this).css("color", color);
                         roiRegion.css("border-color", color); 
+                    });
+                var binarizeCcolor = "rgb(127,127,127)";
+                roiControl.find(".binarizeC-center-text").text(binarizeCcolor);
+                roiControl.find(".binarizeC-center")
+                    .css("color", binarizeCcolor)
+                    .colorpicker({
+                        color: binarizeCcolor
+                    })
+                    .on("changeColor", function (e) {
+                        var color = e.color.toString('rgba');
+                        var c= e.color.toRGB();
+                        roiControl.find(".binarizeC-center-text").text("rgb(" + c.r + "," + c.g + "," + c.b + ")");
+                        $(this).css("color", color);
+                        roiRegion.css("border-color", color); 
+                        if (roiControl.find(".roi-state").is(".active"))
+                            updateImage();                          
                     });
                 roiControl.find(".add-slider").slider({
                     min: -255,
@@ -329,9 +391,53 @@
                             updateImage();
                     }                    
                 });
+                roiControl.find(".binarizeC-slider").slider({
+                    min: 0,
+                    max:400,
+                    value: 250,
+                    create: function() {
+                        roiControl.find(".binarizeC-slider-handle").text( $( this ).slider( "value" ) );
+                    },
+                    slide: function( event, ui ) {
+                        roiControl.find(".binarizeC-slider-handle").text( ui.value );
+                    },
+                    stop: function(event, ui) {
+                        if (roiControl.find(".roi-state").is(".active"))
+                            updateImage();
+                    }                  
+                });                
                 roiControl.find(".gaus-slider-gs").slider({
+                    min: 0,
+                    max: 7,
+                    step: 0.01,
+                    value: 1,
+                    create: function() {
+                        var gs = $( this ).slider( "value" );
+                        roiControl.find(".gaus-slider-handle-gs").text(gs);
+                        roiControl.find(".gaus-opts-ws").text("(window " + Math.floor(gs*3) + ")");
+                    },
+                    slide: function( event, ui ) {
+                        roiControl.find(".gaus-slider-handle-gs").text( ui.value );
+                        roiControl.find(".gaus-opts-ws").text("(window " + Math.floor(ui.value*3) + ")");
+                    },
+                    stop: function(event, ui) {
+                        if (roiControl.find(".roi-state").is(".active"))
+                            updateImage();
+                    }
                 });
                 roiControl.find(".gaus-slider-br").slider({
+                    min: -255,
+                    max: 255,
+                    create: function() {
+                        roiControl.find(".gaus-slider-handle-br").text( $( this ).slider( "value" ) );
+                    },
+                    slide: function( event, ui ) {
+                        roiControl.find(".gaus-slider-handle-br").text( ui.value );
+                    },
+                    stop: function(event, ui) {
+                        if (roiControl.find(".roi-state").is(".active"))
+                            updateImage();
+                    }
                 });                
                 roiControl.find(".grayWay").change(function () {
                     if (roiControl.find(".roi-state").is(".active"))
@@ -339,7 +445,9 @@
                 });   
                 roiControl.find(".operation").change(function () {
                     roiControl.find(".op-opts").hide();
-                    roiControl.find("." + $(this).val() + "-opts").show();                
+                    roiControl.find("." + $(this).val() + "-opts").show();  
+                    if (roiControl.find(".roi-state").is(".active"))
+                        updateImage();              
                 }).change();                       
                 roiControl.find(".roi-state").click(function () {
                     setTimeout(updateImage, 100);

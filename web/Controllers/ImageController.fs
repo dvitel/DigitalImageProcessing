@@ -13,6 +13,9 @@ open Microsoft.Extensions.Caching.Memory
 open System.Drawing.Imaging
 open web.Native
 open Newtonsoft.Json.Linq
+open System.Diagnostics
+open System.Diagnostics
+open System.Diagnostics
 
 type ImageData() = 
     member val sourceImage: IFormFile = null with get, set
@@ -40,7 +43,7 @@ type SessionState = {
 type ImageController (cache: IMemoryCache) =
     inherit Controller()
 
-    member private this.DoNativeOp(img: Bitmap, tgtImg: Bitmap, f) = 
+    member private this.DoNativeOp(img: Bitmap, tgtImg: Bitmap, sw: Stopwatch, f) = 
         if img = tgtImg then 
             let imgLock = img.LockBits(Rectangle(0, 0, img.Width, img.Height), Imaging.ImageLockMode.ReadWrite, Imaging.PixelFormat.Format24bppRgb)
             let src = 
@@ -50,11 +53,14 @@ type ImageController (cache: IMemoryCache) =
                     height = imgLock.Height
                     stride = imgLock.Stride
                 }
+            sw.Restart()
             f src src
+            sw.Stop()
             img.UnlockBits(imgLock)
+            sw.ElapsedMilliseconds
         else         
-            let imgLock = img.LockBits(Rectangle(0, 0, img.Width, img.Height), Imaging.ImageLockMode.ReadOnly, Imaging.PixelFormat.Format24bppRgb)
-            let tgtImgLock = tgtImg.LockBits(Rectangle(0, 0, tgtImg.Width, tgtImg.Height), Imaging.ImageLockMode.WriteOnly, Imaging.PixelFormat.Format24bppRgb)        
+            let imgLock = img.LockBits(Rectangle(0, 0, img.Width, img.Height), Imaging.ImageLockMode.ReadWrite, Imaging.PixelFormat.Format24bppRgb)
+            let tgtImgLock = tgtImg.LockBits(Rectangle(0, 0, tgtImg.Width, tgtImg.Height), Imaging.ImageLockMode.ReadWrite, Imaging.PixelFormat.Format24bppRgb)        
             let src = 
                 { 
                     ch = imgLock.Scan0
@@ -68,20 +74,26 @@ type ImageController (cache: IMemoryCache) =
                     width = tgtImgLock.Width
                     height = tgtImgLock.Height
                     stride = tgtImgLock.Stride
-                }            
+                }           
+            sw.Restart() 
             f src tgt
+            sw.Stop()
             img.UnlockBits(imgLock)
             tgtImg.UnlockBits(tgtImgLock)
+            sw.ElapsedMilliseconds
     
-    member private this.BuildResult(img: Bitmap) = 
+    member private this.BuildResult (img: Bitmap) (timings: (string*int64) list) = 
         use memoryStream = new MemoryStream()
         img.Save(memoryStream, ImageFormat.Jpeg)
         let buffer = memoryStream.GetBuffer()
         let base64Image = System.Convert.ToBase64String(buffer)
         dict 
             [
-                "mime", "image/jpg"
-                "img", base64Image
+                "mime", "image/jpg" :> obj
+                "img", base64Image :> obj
+                "timings", 
+                    timings |> List.rev |> List.map(fun (name, tm) -> 
+                        dict [ "name", name :> obj; "time", tm :> obj ]) :> obj
             ] 
     
     [<HttpPut>]    
@@ -89,11 +101,13 @@ type ImageController (cache: IMemoryCache) =
         let sessionId = this.HttpContext.Session.GetString("id")  
         match cache.TryGetValue(sessionId) with 
         | (true, (:? SessionState as state)) when ops.Count = 0 -> 
-            this.Json(dict [ "ok", true :> obj ]) :> ActionResult
+            let img = new Bitmap(state.img)
+            this.Json(this.BuildResult img []) :> ActionResult 
         | (true, (:? SessionState as state)) ->      
             let img = new Bitmap(state.img)
-            let tgt =                    
-                ops |> Seq.cast<JObject> |> Seq.fold(fun (img: Bitmap) jobj ->                                        
+            let sw = Stopwatch()
+            let tgt, timings =                    
+                ops |> Seq.cast<JObject> |> Seq.fold(fun (img: Bitmap, timings) jobj ->                                        
                     let op = jobj.["op"].Value<string>()
                     let x0 = jobj.["x0"].Value<int>()
                     let y0 = jobj.["y0"].Value<int>()
@@ -109,30 +123,52 @@ type ImageController (cache: IMemoryCache) =
                         }                
                     match op with 
                     | "add" -> 
-                        let v = p.["addV"].Value<int>()                
-                        this.DoNativeOp(img, img, fun src tgt -> 
-                            web.Native.addROI(src, tgt, roi, v))  
-                        img                  
+                        let v = p.["addV"].Value<int>()   
+                        let tm =      
+                            this.DoNativeOp(img, img, sw, fun src tgt -> 
+                                web.Native.addROI(src, tgt, roi, v))  
+                        img, (sprintf "brightness+%d" v, tm)::timings
                     | "gray" -> 
                         let way = p.["grayWay"].Value<int>()      
-                        this.DoNativeOp(img, img, fun src tgt -> 
-                            web.Native.grayROI(src, tgt, roi, way))
-                        img
+                        let tm = 
+                            this.DoNativeOp(img, img, sw, fun src tgt -> 
+                                web.Native.grayROI(src, tgt, roi, way))
+                        img, (sprintf "graying by %d" way, tm)::timings
                     | "binarize" -> 
                         let t1 = p.["t1"].Value<byte>()
                         let t2 = p.["t2"].Value<byte>()
-                        this.DoNativeOp(img, img, fun src tgt -> 
-                            web.Native.binarize(src, tgt, roi, t1, t2))
-                        img  
+                        let tm = 
+                            this.DoNativeOp(img, img, sw, fun src tgt -> 
+                                web.Native.binarize(src, tgt, roi, t1, t2))
+                        img, (sprintf "g-binarize t1 %d, t2 %d" t1 t2, tm)::timings
                     | "gaus" -> 
-                        let gs = p.["gs"].Value<float>()
+                        let gs = p.["gs"].Value<float32>()
                         let br = p.["br"].Value<int>()
                         let tgt = new Bitmap(img)
-                        this.DoNativeOp(img, tgt, fun src tgt -> 
-                            web.Native.gausFilter2D(src, tgt, roi, gs, br))
+                        let tm = 
+                            this.DoNativeOp(img, tgt, sw, fun src tgt -> 
+                                web.Native.gausFilter2D(src, tgt, roi, gs, br) |> ignore)
                         img.Dispose()
-                        tgt
-                    | _ -> img) img
+                        tgt, (sprintf "gaus 2D gs %.2f, br %d" gs br, tm)::timings
+                    | "gaus1D" -> 
+                        let gs = p.["gs"].Value<float32>()
+                        let br = p.["br"].Value<int>()
+                        let tgt = new Bitmap(img)
+                        let tm = 
+                            this.DoNativeOp(img, tgt, sw, fun src tgt -> 
+                                web.Native.gausFilter1Dx2(src, tgt, roi, gs, br) |> ignore)
+                        img.Dispose()
+                        tgt, (sprintf "gaus 1Dx2 gs %.2f, br %d" gs br, tm)::timings
+                    | "binarizeC" -> 
+                        let dist = p.["dist"].Value<int>()
+                        let r = p.["r"].Value<byte>()
+                        let g = p.["g"].Value<byte>()
+                        let b = p.["b"].Value<byte>()
+                        let tm = 
+                            this.DoNativeOp(img, img, sw, fun src tgt -> 
+                                web.Native.binarizeColor(src, tgt, roi, dist, r, g, b))                        
+                        img, (sprintf "c-binarize d %d, rgb(%d,%d,%d)" dist r g b, tm)::timings                           
+                    | _ -> img, timings) (img, [])
             state.tgt.Dispose()
             let state = 
                 {
@@ -140,7 +176,7 @@ type ImageController (cache: IMemoryCache) =
                     tgt = tgt
                 }
             cache.Set(sessionId, state) |> ignore
-            this.Json(this.BuildResult state.tgt) :> ActionResult            
+            this.Json(this.BuildResult state.tgt timings) :> ActionResult            
         | _ -> 
             this.BadRequest() :> ActionResult
 

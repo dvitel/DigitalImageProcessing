@@ -142,34 +142,43 @@ inline float gaus1DFunc(float x, float gs)
 	return exp(-x*x/(2*gs*gs))/(sqrt(2*3.14159265358979323846)*gs);
 }
 
-inline int windowSize(float gs) {
-	return floor(gs * 3);// sqrt(2.0));
-}
+// inline int windowSize(float gs) {
+// 	return floor(gs * 3);// sqrt(2.0));
+// }
 
 int gausFilter2D(IMG src, IMG tgt, ROI roi, float gs, int br)
-{
-	int ws = windowSize(gs);
+{		
+	int ws = gs * 3;
 	int s = 2*ws + 1;
+	int roiY1 = roi.y1 + ws; 
+	int roiY2 = roi.y2 - ws;
+	int roiX1 = roi.x1 + ws;
+	int roiX2 = roi.x2 - ws;
+	LOG("[gaus2D] gs=%f, br=%d, ws=%d, s=%d\r\n", gs, br, ws, s);
+	if ((roiY2 <= roiY1) || (roiX2 <= roiX1)) return s;
 	float* w = (float*)malloc(sizeof(float) * s * s);
-	float sum = 0;
+	w[0]=10;
+	float norm = 0;
 	//window init	
 	for (int i = -ws; i <= ws; i++)
 	for (int j = -ws; j <= ws; j++)
 	{
 		float r = sqrt(i*i+j*j);
 		float gv = gaus2DFunc(r, gs);
-		sum += (w[(ws + i)*s + ws + j] = gv);
+		norm += (w[(ws + i)*s + ws + j] = gv);
 	}
 	//window normalization
+	LOG("-------\r\n");
 	for (int i = -ws; i <= ws; i++)
-	for (int j = -ws; j <= ws; j++)
 	{
-		w[(ws + i)*s + ws + j] /= sum;
+		for (int j = -ws; j <= ws; j++)
+		{
+			int index = (ws + i)*s + ws + j;
+			w[index] /= norm;
+			LOG("%f ", w[index]);
+		}
+		LOG("\r\n");
 	}
-	int roiY1 = roi.y1 + ws; 
-	int roiY2 = roi.y2 - ws;
-	int roiX1 = roi.x1 + ws;
-	int roiX2 = roi.x2 + ws;
 	for (int y = roiY1; y < roiY2; y++)
 	{
 		//edges		
@@ -178,25 +187,30 @@ int gausFilter2D(IMG src, IMG tgt, ROI roi, float gs, int br)
 		for (int x = roiX1; x < roiX2; x++) {
 			//edges 2
 			int srcBaseAddress = srcShift + 3*x;
-			int tgtBaseAddress = srcShift + 3*x;
-			float sum = br;
+			int tgtBaseAddress = tgtShift + 3*x;
+			float totalSum = br;
 			for (int i = -ws; i <= ws; i++)
 			for (int j = -ws; j <= ws; j++)
 			{
-				sum += w[(ws + i)*s + ws + j] * src.ch[srcBaseAddress + j + src.stride * i];
+				totalSum += w[(ws + i)*s + ws + j] * src.ch[src.stride * (y+i) + 3*(x+j)];
 			}
-			tgt.ch[tgtBaseAddress] = tgt.ch[tgtBaseAddress + 1] = tgt.ch[tgtBaseAddress + 2] = checkValue(sum); //3 channels
+			tgt.ch[tgtBaseAddress] = tgt.ch[tgtBaseAddress + 1] = tgt.ch[tgtBaseAddress + 2] = checkValue(totalSum);
 		}
 	}	
 	free(w);
 	return s;
 }
 
-/*
-extern "C" int EXPORT gausFilter1Dx2(IMG src, IMG tgt, ROI roi, float gs, int br)
+int gausFilter1Dx2(IMG src, IMG tgt, ROI roi, float gs, int br)
 {
-	int ws = windowSize(gs);
+	int ws = gs * 3; //windowSize(gs);
 	int s = 2*ws + 1;
+	int roiY1 = roi.y1 + ws; 
+	int roiY2 = roi.y2 - ws;
+	int roiX1 = roi.x1 + ws;
+	int roiX2 = roi.x2 - ws;
+	LOG("[gaus2D] gs=%f, br=%d, ws=%d, s=%d\r\n", gs, br, ws, s);
+	if ((roiY2 <= roiY1) || (roiX2 <= roiX1)) return s;
 	float* w = (float*)malloc(sizeof(float) * s);
 	float sum = 0;
 	//window init	
@@ -210,66 +224,80 @@ extern "C" int EXPORT gausFilter1Dx2(IMG src, IMG tgt, ROI roi, float gs, int br
 	{
 		w[ws + i] /= sum;
 	}
-	int roiY1 = roi.y1 + ws; 
-	int roiY2 = roi.y2 - ws;
-	int roiX1 = roi.x1 + ws;
-	int roiX2 = roi.x2 + ws;
-	if ((roiY2 <= roiY1) || (roiX2 <= roiX1)) return s; //NOOP
-	unsigned char* intermediate = (unsigned char*)malloc(sizeof(unsigned char) * (roi.y2-roi.y1) * (roi.x2 - roi.x1));
+	//if ((roiY2 <= roiY1) || (roiX2 <= roiX1)) return s; //NOOP
+	int iWidth = roi.y2 - roi.y1;
+	int iHeight = roiX2 - roiX1;
+	float* intermediate = (float*)malloc(sizeof(float) * iHeight * iWidth);
+	//first pass: src --> intermediate
 	for (int y = roi.y1; y < roi.y2; y++)
 	{
-		for (int x = roi.x1; x < roi.x2; x++) {
-			//edges 2
-			int srcBaseAddress = srcShift + 3*x;
-			float sum = 0;
-			for (int i = -ws; i <= ws; i++)
-			{
-				sum += w[ws + i] * src.ch[srcBaseAddress + i];
-			}
-			tgt1.ch[tgtBaseAddress] = tgt1.ch[tgtBaseAddress + 1] = tgt1.ch[tgtBaseAddress + 2] = checkValue(sum); //3 channels
-		}
-
-		if ((y >= (roi.y1 + ws)) || (y < (roi.y2 - ws)) 
+		int srcShift = src.stride * y;		
+		int yi = y - roi.y1;
+		if ((y < roiY1) || (y >= roiY2))
 		{			
-			int srcShift = src.stride * y;
-			//int tgtShift = tgt1.stride * y;
-
-		} else {
-			//edges		
-			intermediate[]
+			for (int x = roiX1; x < roiX2; x++)
+				intermediate[iWidth * (x - roiX1)  + yi] = src.ch[srcShift + 3*x]; //TODO - we take red channel here only
 		}
-		//edges		
-		int srcShift = src.stride * y;
-		//int tgtShift = tgt1.stride * y;
-		for (int x = roiX1; x < roiX2; x++) {
-			//edges 2
-			int srcBaseAddress = srcShift + 3*x;
-			int tgtBaseAddress = tgtShift + 3*x;//tgt1.stride * x + 3*y;
-			float sum = 0;
-			for (int i = -ws; i <= ws; i++)
-			{
-				sum += w[ws + i] * src.ch[srcBaseAddress + i];
+		else 
+		{			
+			for (int x = roiX1; x < roiX2; x++) {			
+				int srcBaseAddress = srcShift + 3*x;
+				float sum = 0;
+				for (int i = -ws; i <= ws; i++)
+				{
+					sum += w[ws + i] * src.ch[srcBaseAddress + i];
+				}
+				intermediate[iWidth * (x - roiX1) + yi] = sum;
 			}
-			tgt1.ch[tgtBaseAddress] = tgt1.ch[tgtBaseAddress + 1] = tgt1.ch[tgtBaseAddress + 2] = checkValue(sum); //3 channels
 		}
 	}	
+	//second pass: intermediate --> target
 	for (int y = roiY1; y < roiY2; y++)
 	{
-		//edges		
-		int tgt1Shift = tgt1.stride * y;
-		int tgt2Shift = tgt2.stride * y;
-		for (int x = roiX1; x < roiX2; x++) {
-			//edges 2
-			int tgt1BaseAddress = tgt1Shift + 3*x;
+		int tgtShift = tgt.stride * y;
+		int yi = y-roi.y1;
+		for (int x = roiX1; x < roiX2; x++) {			
+			int tgtBaseAddress = tgtShift + 3*x;
+			int iindex = iWidth* (x-roiX1) + yi;
 			float sum = br;
 			for (int i = -ws; i <= ws; i++)
 			{
-				sum += w[ws + i] * tgt1.ch[tgt1BaseAddress + j + src.stride * i];
+				sum += w[ws + i] * intermediate[iindex + i];
 			}
-			tgt.ch[baseAddress] = tgt.ch[baseAddress + 1] = tgt.ch[baseAddress + 2] = checkValue(sum); //3 channels
+			tgt.ch[tgtBaseAddress] = tgt.ch[tgtBaseAddress + 1] = tgt.ch[tgtBaseAddress + 2] = checkValue(sum);
 		}
 	}	
+	free(intermediate);
 	free(w);
 	return s;
 }
-*/
+
+inline float l2(float x, float y, float z) {
+	return sqrt(x*x + y*y + z*z);
+}
+
+void binarizeColor(IMG src, IMG tgt, ROI roi, int dist, unsigned char r, unsigned char g, unsigned char b) {
+	for (int y=roi.y1; y < roi.y2; y++)
+	{
+		int srcShift = src.stride * y;
+		int tgtShift = tgt.stride * y;
+		for (int x = roi.x1; x < roi.x2; x++) {
+			int shift = srcShift + 3*x;			
+			float pr = src.ch[shift];
+			float pg = src.ch[shift + 1];
+			float pb = src.ch[shift + 2];
+			float d = l2(pr - r, pg - g, pb - b);
+			int shift2 = tgtShift + 3*x;
+			if (d < dist) 
+			{				
+				tgt.ch[shift2] = 255;
+				tgt.ch[shift2 + 1] = 255;
+				tgt.ch[shift2 + 2] = 255;
+			} else {
+				tgt.ch[shift2] = 0;
+				tgt.ch[shift2 + 1] = 0;
+				tgt.ch[shift2 + 2] = 0;				
+			}
+		}
+	}	
+}

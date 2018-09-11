@@ -11,3 +11,5 @@ output/*
 web/bin/*
 web/obj/*
 web/wwwroot/package-lock.json
+console/bin/*
+console/obj/*

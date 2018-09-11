@@ -70,6 +70,19 @@
             ],
             "group": "build",
             "problemMatcher": "$msCompile"
-        }
+        },
+        {
+            "label": "buildConsole",
+            "type": "shell",
+            "command": "dotnet",
+            "options": {
+                "cwd": "${workspaceFolder}/console"
+            },
+            "args": [
+                "build"
+            ],
+            "group": "build",
+            "problemMatcher": "$msCompile"
+        }        
     ]
 }
