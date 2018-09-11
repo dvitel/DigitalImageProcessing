@@ -414,11 +414,11 @@
                     create: function() {
                         var gs = $( this ).slider( "value" );
                         roiControl.find(".gaus-slider-handle-gs").text(gs);
-                        roiControl.find(".gaus-opts-ws").text("(window " + Math.floor(gs*3) + ")");
+                        roiControl.find(".gaus-opts-ws").text("(window " + (2*Math.floor(gs*3)+1) + ")");
                     },
                     slide: function( event, ui ) {
                         roiControl.find(".gaus-slider-handle-gs").text( ui.value );
-                        roiControl.find(".gaus-opts-ws").text("(window " + Math.floor(ui.value*3) + ")");
+                        roiControl.find(".gaus-opts-ws").text("(window " + (2*Math.floor(ui.value*3)+1) + ")");
                     },
                     stop: function(event, ui) {
                         if (roiControl.find(".roi-state").is(".active"))

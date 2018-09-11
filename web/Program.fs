@@ -25,13 +25,15 @@ module Program =
         if args.Length >= 1 && args.[0] = "-c" then 
             printfn "[dip] Console mode is used"
             //console mode args.[1] should contains json file
-            if args.Length >=2 then             
+            if args.Length >=2 then
+                let p = Path.GetFullPath(Path.Combine(System.IO.Directory.GetCurrentDirectory(), args.[1]))
+                printfn "Config file %s" p
                 let config = 
                     ConfigurationBuilder()
-                        .SetBasePath(System.IO.Directory.GetCurrentDirectory())
-                        .AddJsonFile(args.[1], optional=true)
+                        .AddJsonFile(p, optional=true)
                         .Build()
                 let imgs = config.GetSection("images").Get<ImageConfig[]>()
+                
                 printfn "Found %d images" imgs.Length
                 let timer = System.Diagnostics.Stopwatch()
                 imgs |> Array.iter(fun img -> 

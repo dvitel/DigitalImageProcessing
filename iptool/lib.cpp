@@ -11,14 +11,14 @@ unsigned char checkValue(int value) {
 /*-----------------------------------------------------------------------**/
 void add(IMG src, IMG tgt, int value)
 {
-	//printf("Width: %d, height: %d, stride1: %d, stride2: %d\r\n", width, height, srcStride, tgtStride);
+	//LOG("Width: %d, height: %d, stride1: %d, stride2: %d\n", width, height, srcStride, tgtStride);
 	ROI roi = { .x1 = 0, .x2=src.width, .y1=0, .y2=src.height};
 	addROI(src, tgt, roi, value);
 }
 
 void addROI(IMG src, IMG tgt, ROI roi, int value)
 {
-	//printf("Width: %d, height: %d, stride1: %d, stride2: %d\r\n", width, height, srcStride, tgtStride);
+	//LOG("Width: %d, height: %d, stride1: %d, stride2: %d\n", width, height, srcStride, tgtStride);
 	for (int y=roi.y1; y < roi.y2; y++)
 	{
 		int srcShift = src.stride * y;
@@ -33,7 +33,7 @@ void addROI(IMG src, IMG tgt, ROI roi, int value)
 
 void grayROI(IMG src, IMG tgt, ROI roi, GRAY_WAY grayWay)
 {
-	//printf("Width: %d, height: %d, stride1: %d, stride2: %d\r\n", width, height, srcStride, tgtStride);
+	//LOG("Width: %d, height: %d, stride1: %d, stride2: %d\n", width, height, srcStride, tgtStride);
 	switch (grayWay)
 	{
 		case(B): 		
@@ -131,22 +131,18 @@ void binarize(IMG src, IMG tgt, ROI roi, unsigned char t1, unsigned char t2){
 	}
 }
 
-inline float gaus2DFunc(float r, float gs)
+inline double gaus2DFunc(double r, double gs)
 {
-	float gs2 = 2*gs*gs;
+	double gs2 = 2*gs*gs;
 	return exp(-r*r/gs2)/(3.14159265358979323846*gs2);
 }
 
-inline float gaus1DFunc(float x, float gs)
+inline double gaus1DFunc(double x, double gs)
 {
 	return exp(-x*x/(2*gs*gs))/(sqrt(2*3.14159265358979323846)*gs);
 }
 
-// inline int windowSize(float gs) {
-// 	return floor(gs * 3);// sqrt(2.0));
-// }
-
-int gausFilter2D(IMG src, IMG tgt, ROI roi, float gs, int br)
+int gausFilter2D(IMG src, IMG tgt, ROI roi, double gs, int br)
 {		
 	int ws = gs * 3;
 	int s = 2*ws + 1;
@@ -154,31 +150,48 @@ int gausFilter2D(IMG src, IMG tgt, ROI roi, float gs, int br)
 	int roiY2 = roi.y2 - ws;
 	int roiX1 = roi.x1 + ws;
 	int roiX2 = roi.x2 - ws;
-	LOG("[gaus2D] gs=%f, br=%d, ws=%d, s=%d\r\n", gs, br, ws, s);
+	LOG("[gaus2D] gs=%f, br=%d, ws=%d, s=%d\n", gs, br, ws, s);
 	if ((roiY2 <= roiY1) || (roiX2 <= roiX1)) return s;
-	float* w = (float*)malloc(sizeof(float) * s * s);
+	double* w = (double*)malloc(sizeof(double) * s * s);
 	w[0]=10;
-	float norm = 0;
+	double norm = 0;
 	//window init	
+	LOG("WINDOW:\n");
 	for (int i = -ws; i <= ws; i++)
-	for (int j = -ws; j <= ws; j++)
-	{
-		float r = sqrt(i*i+j*j);
-		float gv = gaus2DFunc(r, gs);
-		norm += (w[(ws + i)*s + ws + j] = gv);
-	}
-	//window normalization
-	LOG("-------\r\n");
-	for (int i = -ws; i <= ws; i++)
-	{
+	{				
 		for (int j = -ws; j <= ws; j++)
 		{
-			int index = (ws + i)*s + ws + j;
-			w[index] /= norm;
-			LOG("%f ", w[index]);
+			double r = sqrt(i*i+j*j);
+			double gv = gaus2DFunc(r, gs);		
+			LOG("%6.4f  ", gv);
+			norm += (w[(ws + i)*s + ws + j] = gv);
 		}
-		LOG("\r\n");
+		LOG("\n");
 	}
+
+	LOG("ROI: \n");
+	for (int y = roi.y1; y < roi.y2; y++)
+	{
+		for (int x = roi.x1; x < roi.x2; x++) {
+			LOG("%3d  ",  src.ch[src.stride * y + 3*x]);
+		}
+		LOG("\n");
+	}	
+	//LOG("\n");
+	//LOG("\n");
+	//window normalization
+	// LOG("-------\n");
+	// for (int i = -ws; i <= ws; i++)
+	// {
+	// 	for (int j = -ws; j <= ws; j++)
+	// 	{
+	// 		int index = (ws + i)*s + ws + j;
+	// 		w[index] /= norm;
+	// 		LOG("%f ", w[index]);
+	// 	}
+	// 	LOG("\n");
+	// }	
+	LOG("ROI*: \n");
 	for (int y = roiY1; y < roiY2; y++)
 	{
 		//edges		
@@ -188,20 +201,30 @@ int gausFilter2D(IMG src, IMG tgt, ROI roi, float gs, int br)
 			//edges 2
 			int srcBaseAddress = srcShift + 3*x;
 			int tgtBaseAddress = tgtShift + 3*x;
-			float totalSum = br;
+			double totalSum = br;
 			for (int i = -ws; i <= ws; i++)
 			for (int j = -ws; j <= ws; j++)
 			{
 				totalSum += w[(ws + i)*s + ws + j] * src.ch[src.stride * (y+i) + 3*(x+j)];
 			}
 			tgt.ch[tgtBaseAddress] = tgt.ch[tgtBaseAddress + 1] = tgt.ch[tgtBaseAddress + 2] = checkValue(totalSum);
+			LOG("%6.4f  ", totalSum);
 		}
+		LOG("\n");
+	}
+	LOG("RESULT: \n");
+	for (int y = roi.y1; y < roi.y2; y++)
+	{
+		for (int x = roi.x1; x < roi.x2; x++) {
+			LOG("%3d  ",  tgt.ch[src.stride * y + 3*x]);
+		}
+		LOG("\n");
 	}	
 	free(w);
 	return s;
 }
 
-int gausFilter1Dx2(IMG src, IMG tgt, ROI roi, float gs, int br)
+int gausFilter1Dx2(IMG src, IMG tgt, ROI roi, double gs, int br)
 {
 	int ws = gs * 3; //windowSize(gs);
 	int s = 2*ws + 1;
@@ -209,49 +232,66 @@ int gausFilter1Dx2(IMG src, IMG tgt, ROI roi, float gs, int br)
 	int roiY2 = roi.y2 - ws;
 	int roiX1 = roi.x1 + ws;
 	int roiX2 = roi.x2 - ws;
-	LOG("[gaus2D] gs=%f, br=%d, ws=%d, s=%d\r\n", gs, br, ws, s);
+	LOG("[gaus2D] gs=%f, br=%d, ws=%d, s=%d\n", gs, br, ws, s);
 	if ((roiY2 <= roiY1) || (roiX2 <= roiX1)) return s;
-	float* w = (float*)malloc(sizeof(float) * s);
-	float sum = 0;
+	double* w = (double*)malloc(sizeof(double) * s);
+	double sum = 0;
 	//window init	
+	LOG("WINDOW: \n");
 	for (int i = -ws; i <= ws; i++)
 	{
-		float gv = gaus1DFunc(i, gs);
+		double gv = gaus1DFunc(i, gs);
 		sum += (w[ws + i] = gv);
+		LOG("%6.4f  ", gv);
 	}
+	//LOG("\n");
+	//LOG("\n");
 	//window normalization
-	for (int i = -ws; i <= ws; i++)
-	{
-		w[ws + i] /= sum;
-	}
+	// for (int i = -ws; i <= ws; i++)
+	// {
+	// 	w[ws + i] /= sum;
+	// }
 	//if ((roiY2 <= roiY1) || (roiX2 <= roiX1)) return s; //NOOP
+	LOG("\nROI: \n");
+	for (int y = roi.y1; y < roi.y2; y++)
+	{
+		for (int x = roi.x1; x < roi.x2; x++) {
+			LOG("%3d  ",  src.ch[src.stride * y + 3*x]);
+		}
+		LOG("\n");
+	}	
+
+
 	int iWidth = roi.y2 - roi.y1;
 	int iHeight = roiX2 - roiX1;
-	float* intermediate = (float*)malloc(sizeof(float) * iHeight * iWidth);
+	double* intermediate = (double*)malloc(sizeof(double) * iHeight * iWidth);
 	//first pass: src --> intermediate
 	for (int y = roi.y1; y < roi.y2; y++)
 	{
 		int srcShift = src.stride * y;		
-		int yi = y - roi.y1;
-		if ((y < roiY1) || (y >= roiY2))
-		{			
-			for (int x = roiX1; x < roiX2; x++)
-				intermediate[iWidth * (x - roiX1)  + yi] = src.ch[srcShift + 3*x]; //TODO - we take red channel here only
-		}
-		else 
-		{			
-			for (int x = roiX1; x < roiX2; x++) {			
-				int srcBaseAddress = srcShift + 3*x;
-				float sum = 0;
-				for (int i = -ws; i <= ws; i++)
-				{
-					sum += w[ws + i] * src.ch[srcBaseAddress + i];
-				}
-				intermediate[iWidth * (x - roiX1) + yi] = sum;
+		int yi = y - roi.y1;		
+		for (int x = roiX1; x < roiX2; x++) {			
+			//int srcBaseAddress = srcShift + 3*x;
+			double sum = 0;
+			for (int i = -ws; i <= ws; i++)
+			{
+				sum += w[ws + i] * src.ch[srcShift + 3*(x+i)];
 			}
+			intermediate[iWidth * (x - roiX1) + yi] = sum;
 		}
 	}	
+
+	LOG("INTERMEDIATE: \n");
+	for (int x = roiX1; x < roiX2; x++) {
+		for (int y = roi.y1; y < roi.y2; y++)
+		{
+			int yi = y - roi.y1;			
+			LOG("%6.4f  ",  intermediate[iWidth * (x - roiX1) + yi]);			
+		}	
+		LOG("\n");
+	}
 	//second pass: intermediate --> target
+	LOG("\nROI*: \n");
 	for (int y = roiY1; y < roiY2; y++)
 	{
 		int tgtShift = tgt.stride * y;
@@ -259,14 +299,26 @@ int gausFilter1Dx2(IMG src, IMG tgt, ROI roi, float gs, int br)
 		for (int x = roiX1; x < roiX2; x++) {			
 			int tgtBaseAddress = tgtShift + 3*x;
 			int iindex = iWidth* (x-roiX1) + yi;
-			float sum = br;
+			double sum = br;
 			for (int i = -ws; i <= ws; i++)
 			{
 				sum += w[ws + i] * intermediate[iindex + i];
 			}
 			tgt.ch[tgtBaseAddress] = tgt.ch[tgtBaseAddress + 1] = tgt.ch[tgtBaseAddress + 2] = checkValue(sum);
+			LOG("%6.4f  ", sum);
 		}
+		LOG("\n");
 	}	
+
+	LOG("RESULT: \n");
+	for (int y = roi.y1; y < roi.y2; y++)
+	{
+		for (int x = roi.x1; x < roi.x2; x++) {
+			LOG("%3d  ",  tgt.ch[src.stride * y + 3*x]);
+		}
+		LOG("\n");
+	}	
+		
 	free(intermediate);
 	free(w);
 	return s;
