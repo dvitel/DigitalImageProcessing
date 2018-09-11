@@ -159,13 +159,6 @@ Benefits of console app:
 
 ![Blur with Gaussian filter](img/p5.PNG)
 
-### Console app output
-Here is an example of run of console app with config file which gives images from input folder to dip.dll and collect results into output folder.
-```
-4886496000
-257184000
-```
-
 ### Gaussian filter: 2D and 1Dx2 (correctness check)
 In order to check that two implementations produces same output debug tracing was added to C code.
 Experiments were conducted with window size of 7 (gs=1) and ROI size of 7,8,9.
