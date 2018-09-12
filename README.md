@@ -155,9 +155,15 @@ Benefits of console app:
 
 ![Color image binarization](img/p4.PNG)
 
-5. Blur with Gaussian filter
+5. Blur with Gaussian filter (2D and 1Dx2, same area, same window size)
 
 ![Blur with Gaussian filter](img/p5.PNG)
+
+6. Same effect of blurring by 1Dx2 and 2D Gaussian filter (note performance difference)
+
+![Blur with Gaussian filter](img/p6.PNG)
+
+![Blur with Gaussian filter](img/p7.PNG)
 
 ### Gaussian filter: 2D and 1Dx2 (correctness check)
 In order to check that two implementations produces same output debug tracing was added to C code.
